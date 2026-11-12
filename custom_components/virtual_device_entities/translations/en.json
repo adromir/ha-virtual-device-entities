@@ -1,0 +1,52 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Create Virtual Device Entity",
+        "description": "Create a virtual entity attached directly to an existing device, or as a standalone virtual device.",
+        "data": {
+          "entity_name": "Entity Name",
+          "platform_type": "Platform Type",
+          "device_id": "Base Device (optional)",
+          "initial_value": "Initial Value / State",
+          "icon": "Icon",
+          "unit_of_measurement": "Unit of Measurement",
+          "device_class": "Device Class",
+          "linked_entity": "Linked Source Entity (optional)"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Virtual Entity Options",
+        "description": "Adjust the configuration and values of this virtual entity.",
+        "data": {
+          "entity_name": "Entity Name",
+          "initial_value": "Value / State",
+          "icon": "Icon",
+          "unit_of_measurement": "Unit of Measurement",
+          "device_class": "Device Class",
+          "linked_entity": "Linked Source Entity"
+        }
+      }
+    }
+  },
+  "services": {
+    "set_value": {
+      "name": "Set Virtual Value",
+      "description": "Updates the state or value of a virtual entity attached to a device.",
+      "fields": {
+        "value": {
+          "name": "Value",
+          "description": "The new state, number, or text value to set."
+        }
+      }
+    },
+    "reset": {
+      "name": "Reset Virtual Entity",
+      "description": "Resets the virtual entity to its initial default state or sets timestamp to now."
+    }
+  }
+}

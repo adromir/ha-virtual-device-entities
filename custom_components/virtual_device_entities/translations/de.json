@@ -1,0 +1,52 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Virtuelle Geräte-Entität erstellen",
+        "description": "Erstelle eine virtuelle Entität, die direkt an ein bestehendes Gerät angehängt wird, oder erstelle ein eigenständiges virtuelles Gerät.",
+        "data": {
+          "entity_name": "Entitätsname",
+          "platform_type": "Plattform-Typ",
+          "device_id": "Basis-Gerät (optional)",
+          "initial_value": "Startwert / Zustand",
+          "icon": "Symbol (Icon)",
+          "unit_of_measurement": "Maßeinheit",
+          "device_class": "Geräteklasse (Device Class)",
+          "linked_entity": "Verknüpfte Quell-Entität (optional)"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Virtuelle Entitäts-Optionen",
+        "description": "Passe Konfiguration und Werte dieser virtuellen Entität an.",
+        "data": {
+          "entity_name": "Entitätsname",
+          "initial_value": "Wert / Zustand",
+          "icon": "Symbol (Icon)",
+          "unit_of_measurement": "Maßeinheit",
+          "device_class": "Geräteklasse (Device Class)",
+          "linked_entity": "Verknüpfte Quell-Entität"
+        }
+      }
+    }
+  },
+  "services": {
+    "set_value": {
+      "name": "Virtuellen Wert setzen",
+      "description": "Aktualisiert den Zustand oder Wert einer virtuellen Geräte-Entität.",
+      "fields": {
+        "value": {
+          "name": "Wert",
+          "description": "Der neue Zustand, die Zahl oder der Textwert."
+        }
+      }
+    },
+    "reset": {
+      "name": "Virtuelle Entität zurücksetzen",
+      "description": "Setzt die virtuelle Entität auf ihren Standardwert zurück oder setzt den Zeitstempel auf Jetzt."
+    }
+  }
+}

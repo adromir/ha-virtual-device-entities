@@ -1,0 +1,20 @@
+set_value:
+  name: Set Virtual Value
+  description: Updates the state or value of a virtual entity attached to a device.
+  target:
+    entity:
+      integration: virtual_device_entities
+  fields:
+    value:
+      name: Value
+      description: The new state, number, or text value to set.
+      required: true
+      selector:
+        text: {}
+
+reset:
+  name: Reset Virtual Entity
+  description: Resets the virtual entity to its initial default state or sets timestamp to now.
+  target:
+    entity:
+      integration: virtual_device_entities

@@ -12,14 +12,19 @@ from homeassistant.helpers.restore_state import RestoreEntity
 
 from .const import (
     DOMAIN,
-    CONF_DEVICE_ID,
+    CONF_ENTITIES,
+    CONF_DEVICE_NAME,
+    CONF_BASE_DEVICE_ID,
+    CONF_ATTACH_TO_BASE,
     CONF_ENTITY_NAME,
-    CONF_INITIAL_VALUE,
+    CONF_PLATFORM,
     CONF_ICON,
     CONF_UNIT,
+    CONF_INITIAL_VALUE,
     CONF_MIN_VALUE,
     CONF_MAX_VALUE,
     CONF_STEP_VALUE,
+    PLATFORM_NUMBER,
 )
 from .helpers import get_device_info
 
@@ -31,9 +36,30 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up the Virtual Device Entities number."""
-    entity = VirtualDeviceNumber(hass, entry)
-    async_add_entities([entity], True)
+    """Set up the Virtual Device numbers."""
+    entry_data = {**entry.data, **entry.options}
+    entities_map = entry_data.get(CONF_ENTITIES, {})
+    device_name = entry_data.get(CONF_DEVICE_NAME, entry.title)
+    base_device_id = entry_data.get(CONF_BASE_DEVICE_ID)
+    attach_to_base = entry_data.get(CONF_ATTACH_TO_BASE, False)
+
+    numbers = []
+    for ent_id, cfg in entities_map.items():
+        if cfg.get(CONF_PLATFORM) == PLATFORM_NUMBER:
+            numbers.append(
+                VirtualDeviceNumber(
+                    hass=hass,
+                    entry=entry,
+                    entity_id_key=ent_id,
+                    config=cfg,
+                    device_name=device_name,
+                    base_device_id=base_device_id,
+                    attach_to_base=attach_to_base,
+                )
+            )
+
+    if numbers:
+        async_add_entities(numbers, True)
 
 
 class VirtualDeviceNumber(RestoreEntity, NumberEntity):
@@ -42,38 +68,49 @@ class VirtualDeviceNumber(RestoreEntity, NumberEntity):
     _attr_has_entity_name = True
     _attr_mode = NumberMode.AUTO
 
-    def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        entry: ConfigEntry,
+        entity_id_key: str,
+        config: dict[str, Any],
+        device_name: str,
+        base_device_id: str | None,
+        attach_to_base: bool,
+    ) -> None:
         """Initialize the virtual number."""
         self.hass = hass
         self._entry = entry
-        self._attr_unique_id = f"{DOMAIN}_{entry.entry_id}_number"
+        self._entity_id_key = entity_id_key
+        self._config = config
+        self._device_name = device_name
+        self._base_device_id = base_device_id
+        self._attach_to_base = attach_to_base
 
-        opts = entry.options
-        data = entry.data
+        self._attr_unique_id = f"{DOMAIN}_{entry.entry_id}_{entity_id_key}"
+        self._attr_name = config.get(CONF_ENTITY_NAME, "Virtual Number")
+        self._attr_icon = config.get(CONF_ICON, "mdi:numeric")
+        self._attr_native_unit_of_measurement = config.get(CONF_UNIT)
 
-        self._attr_name = opts.get(CONF_ENTITY_NAME, data.get(CONF_ENTITY_NAME, "Virtual Number"))
-        self._base_device_id = opts.get(CONF_DEVICE_ID, data.get(CONF_DEVICE_ID))
-        self._attr_icon = opts.get(CONF_ICON, data.get(CONF_ICON, "mdi:numeric"))
-        self._attr_native_unit_of_measurement = opts.get(CONF_UNIT, data.get(CONF_UNIT))
-
-        self._attr_native_min_value = float(opts.get(CONF_MIN_VALUE, data.get(CONF_MIN_VALUE, 0.0)))
-        self._attr_native_max_value = float(opts.get(CONF_MAX_VALUE, data.get(CONF_MAX_VALUE, 100.0)))
-        self._attr_native_step = float(opts.get(CONF_STEP_VALUE, data.get(CONF_STEP_VALUE, 1.0)))
+        self._attr_native_min_value = float(config.get(CONF_MIN_VALUE, 0.0))
+        self._attr_native_max_value = float(config.get(CONF_MAX_VALUE, 100.0))
+        self._attr_native_step = float(config.get(CONF_STEP_VALUE, 1.0))
 
         try:
-            init_val = float(opts.get(CONF_INITIAL_VALUE, data.get(CONF_INITIAL_VALUE, 0.0)))
+            init_val = float(config.get(CONF_INITIAL_VALUE, 0.0))
         except (ValueError, TypeError):
             init_val = self._attr_native_min_value
         self._attr_native_value = init_val
 
     @property
     def device_info(self):
-        """Return device information linking to base device or standalone."""
+        """Return device information."""
         return get_device_info(
             self.hass,
             self._entry.entry_id,
             self._base_device_id,
-            self._attr_name,
+            self._attach_to_base,
+            self._device_name,
         )
 
     @property
@@ -87,7 +124,6 @@ class VirtualDeviceNumber(RestoreEntity, NumberEntity):
     async def async_added_to_hass(self) -> None:
         """Handle entity added to Home Assistant."""
         await super().async_added_to_hass()
-
         entities_list = self.hass.data.setdefault(f"{DOMAIN}_entities", [])
         entities_list.append(self)
 
@@ -121,11 +157,8 @@ class VirtualDeviceNumber(RestoreEntity, NumberEntity):
 
     async def async_reset(self) -> None:
         """Reset number to minimum or initial value."""
-        init_val = self._entry.options.get(
-            CONF_INITIAL_VALUE, self._entry.data.get(CONF_INITIAL_VALUE, self._attr_native_min_value)
-        )
         try:
-            self._attr_native_value = float(init_val)
+            self._attr_native_value = float(self._config.get(CONF_INITIAL_VALUE, self._attr_native_min_value))
         except (ValueError, TypeError):
             self._attr_native_value = self._attr_native_min_value
         self.async_write_ha_state()

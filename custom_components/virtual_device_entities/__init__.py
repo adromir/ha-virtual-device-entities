@@ -9,12 +9,12 @@ import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers import config_validation as cv
-from homeassistant.helpers import device_registry as dr
-from homeassistant.helpers import entity_platform
 
 from .const import (
     DOMAIN,
-    CONF_PLATFORM_TYPE,
+    CONF_ENTITIES,
+    CONF_PLATFORM,
+    SUPPORTED_PLATFORMS,
     SERVICE_SET_VALUE,
     SERVICE_RESET,
     ATTR_VALUE,
@@ -71,32 +71,43 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Set up a Virtual Device Entities config entry."""
+    """Set up a Virtual Device config entry with its defined entities."""
     hass.data.setdefault(DOMAIN, {})
     hass.data.setdefault(f"{DOMAIN}_entities", [])
 
-    platform_type = entry.options.get(
-        CONF_PLATFORM_TYPE, entry.data.get(CONF_PLATFORM_TYPE, "sensor")
-    )
+    entry_data = {**entry.data, **entry.options}
+    entities_map = entry_data.get(CONF_ENTITIES, {})
+
+    # Determine which platforms need setup for this device
+    platforms_to_setup = set()
+    for entity_cfg in entities_map.values():
+        plat = entity_cfg.get(CONF_PLATFORM, "sensor")
+        if plat in SUPPORTED_PLATFORMS:
+            platforms_to_setup.add(plat)
+
+    # Always ensure sensor is present if empty
+    if not platforms_to_setup:
+        platforms_to_setup.add("sensor")
 
     hass.data[DOMAIN][entry.entry_id] = {
-        "platform_type": platform_type,
+        "platforms": list(platforms_to_setup),
     }
 
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
 
-    await hass.config_entries.async_forward_entry_setups(entry, [platform_type])
+    await hass.config_entries.async_forward_entry_setups(entry, list(platforms_to_setup))
     return True
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Unload a Virtual Device Entities config entry."""
-    platform_type = hass.data[DOMAIN].get(entry.entry_id, {}).get("platform_type")
+    """Unload a Virtual Device config entry."""
+    entry_info = hass.data[DOMAIN].get(entry.entry_id, {})
+    platforms = entry_info.get("platforms", [])
     unload_ok = True
-    if platform_type:
-        unload_ok = await hass.config_entries.async_forward_entry_unload(
-            entry, platform_type
-        )
+    for plat in platforms:
+        ok = await hass.config_entries.async_forward_entry_unload(entry, plat)
+        if not ok:
+            unload_ok = False
 
     if unload_ok and entry.entry_id in hass.data[DOMAIN]:
         hass.data[DOMAIN].pop(entry.entry_id)

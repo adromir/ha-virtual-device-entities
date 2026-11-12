@@ -2,17 +2,31 @@
   "config": {
     "step": {
       "user": {
-        "title": "Create Virtual Device Entity",
-        "description": "Create a virtual entity attached directly to an existing device, or as a standalone virtual device.",
+        "title": "Create Virtual Device",
+        "description": "Create an enhanced virtual device in Home Assistant that groups custom states, proxy sensors, and template calculations.",
         "data": {
-          "entity_name": "Entity Name",
-          "platform_type": "Platform Type",
-          "device_id": "Base Device (optional)",
-          "initial_value": "Initial Value / State",
+          "device_name": "Device Name",
+          "base_device_id": "Base Device (optional)",
+          "attach_to_base_device": "Attach directly to base device page",
+          "entity_type": "Initial Entity Type"
+        }
+      },
+      "add_entity": {
+        "title": "Configure Entity",
+        "description": "Define the properties for this entity on the virtual device.",
+        "data": {
+          "name": "Entity Name",
+          "source_entity": "Source Entity",
+          "state_rules": "State Rules (Condition | State | Icon | Color)",
+          "default_state": "Default State",
+          "default_icon": "Default Icon",
+          "default_color": "Default Color (HEX or CSS name)",
+          "template": "Jinja2 Calculation Template",
+          "platform": "Platform",
           "icon": "Icon",
           "unit_of_measurement": "Unit of Measurement",
           "device_class": "Device Class",
-          "linked_entity": "Linked Source Entity (optional)"
+          "initial_value": "Initial Value"
         }
       }
     }
@@ -20,15 +34,45 @@
   "options": {
     "step": {
       "init": {
-        "title": "Virtual Entity Options",
-        "description": "Adjust the configuration and values of this virtual entity.",
+        "title": "Manage Virtual Device",
+        "description": "Choose an action for this virtual device.",
+        "menu_options": {
+          "add_entity_type": "➕ Add new entity to this device",
+          "edit_device": "🏷️ Edit device name and base device"
+        }
+      },
+      "add_entity_type": {
+        "title": "Add Entity",
+        "description": "Choose the type of entity to add to this virtual device.",
         "data": {
-          "entity_name": "Entity Name",
-          "initial_value": "Value / State",
+          "entity_type": "Entity Type"
+        }
+      },
+      "add_entity_details": {
+        "title": "Configure Entity",
+        "description": "Configure the new entity properties.",
+        "data": {
+          "name": "Entity Name",
+          "source_entity": "Source Entity",
+          "state_rules": "State Rules (Condition | State | Icon | Color)",
+          "default_state": "Default State",
+          "default_icon": "Default Icon",
+          "default_color": "Default Color",
+          "template": "Jinja2 Template",
+          "platform": "Platform",
           "icon": "Icon",
-          "unit_of_measurement": "Unit of Measurement",
+          "unit_of_measurement": "Unit",
           "device_class": "Device Class",
-          "linked_entity": "Linked Source Entity"
+          "initial_value": "Initial Value"
+        }
+      },
+      "edit_device": {
+        "title": "Device Settings",
+        "description": "Update virtual device settings.",
+        "data": {
+          "device_name": "Device Name",
+          "base_device_id": "Base Device",
+          "attach_to_base_device": "Attach directly to base device page"
         }
       }
     }
@@ -36,11 +80,11 @@
   "services": {
     "set_value": {
       "name": "Set Virtual Value",
-      "description": "Updates the state or value of a virtual entity attached to a device.",
+      "description": "Updates the state or value of a virtual entity.",
       "fields": {
         "value": {
           "name": "Value",
-          "description": "The new state, number, or text value to set."
+          "description": "The new state or value to set."
         }
       }
     },

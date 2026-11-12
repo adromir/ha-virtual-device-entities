@@ -12,10 +12,15 @@ from homeassistant.helpers.restore_state import RestoreEntity
 
 from .const import (
     DOMAIN,
-    CONF_DEVICE_ID,
+    CONF_ENTITIES,
+    CONF_DEVICE_NAME,
+    CONF_BASE_DEVICE_ID,
+    CONF_ATTACH_TO_BASE,
     CONF_ENTITY_NAME,
-    CONF_INITIAL_VALUE,
+    CONF_PLATFORM,
     CONF_ICON,
+    CONF_INITIAL_VALUE,
+    PLATFORM_SWITCH,
 )
 from .helpers import get_device_info
 
@@ -27,9 +32,30 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up the Virtual Device Entities switch."""
-    entity = VirtualDeviceSwitch(hass, entry)
-    async_add_entities([entity], True)
+    """Set up the Virtual Device switches."""
+    entry_data = {**entry.data, **entry.options}
+    entities_map = entry_data.get(CONF_ENTITIES, {})
+    device_name = entry_data.get(CONF_DEVICE_NAME, entry.title)
+    base_device_id = entry_data.get(CONF_BASE_DEVICE_ID)
+    attach_to_base = entry_data.get(CONF_ATTACH_TO_BASE, False)
+
+    switches = []
+    for ent_id, cfg in entities_map.items():
+        if cfg.get(CONF_PLATFORM) == PLATFORM_SWITCH:
+            switches.append(
+                VirtualDeviceSwitch(
+                    hass=hass,
+                    entry=entry,
+                    entity_id_key=ent_id,
+                    config=cfg,
+                    device_name=device_name,
+                    base_device_id=base_device_id,
+                    attach_to_base=attach_to_base,
+                )
+            )
+
+    if switches:
+        async_add_entities(switches, True)
 
 
 class VirtualDeviceSwitch(RestoreEntity, SwitchEntity):
@@ -37,30 +63,41 @@ class VirtualDeviceSwitch(RestoreEntity, SwitchEntity):
 
     _attr_has_entity_name = True
 
-    def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        entry: ConfigEntry,
+        entity_id_key: str,
+        config: dict[str, Any],
+        device_name: str,
+        base_device_id: str | None,
+        attach_to_base: bool,
+    ) -> None:
         """Initialize the virtual switch."""
         self.hass = hass
         self._entry = entry
-        self._attr_unique_id = f"{DOMAIN}_{entry.entry_id}_switch"
+        self._entity_id_key = entity_id_key
+        self._config = config
+        self._device_name = device_name
+        self._base_device_id = base_device_id
+        self._attach_to_base = attach_to_base
 
-        opts = entry.options
-        data = entry.data
+        self._attr_unique_id = f"{DOMAIN}_{entry.entry_id}_{entity_id_key}"
+        self._attr_name = config.get(CONF_ENTITY_NAME, "Virtual Switch")
+        self._attr_icon = config.get(CONF_ICON, "mdi:toggle-switch")
 
-        self._attr_name = opts.get(CONF_ENTITY_NAME, data.get(CONF_ENTITY_NAME, "Virtual Switch"))
-        self._base_device_id = opts.get(CONF_DEVICE_ID, data.get(CONF_DEVICE_ID))
-        self._attr_icon = opts.get(CONF_ICON, data.get(CONF_ICON, "mdi:toggle-switch"))
-
-        init_val = str(opts.get(CONF_INITIAL_VALUE, data.get(CONF_INITIAL_VALUE, "off"))).lower()
+        init_val = str(config.get(CONF_INITIAL_VALUE, "off")).lower()
         self._attr_is_on = init_val in ("on", "true", "1")
 
     @property
     def device_info(self):
-        """Return device information linking to base device or standalone."""
+        """Return device information."""
         return get_device_info(
             self.hass,
             self._entry.entry_id,
             self._base_device_id,
-            self._attr_name,
+            self._attach_to_base,
+            self._device_name,
         )
 
     @property
@@ -74,7 +111,6 @@ class VirtualDeviceSwitch(RestoreEntity, SwitchEntity):
     async def async_added_to_hass(self) -> None:
         """Handle entity added to Home Assistant."""
         await super().async_added_to_hass()
-
         entities_list = self.hass.data.setdefault(f"{DOMAIN}_entities", [])
         entities_list.append(self)
 

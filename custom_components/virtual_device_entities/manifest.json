@@ -1,7 +1,7 @@
 {
   "domain": "virtual_device_entities",
   "name": "Virtual Device Entities",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "documentation": "https://github.com/adromir/ha-virtual-device-entities",
   "issue_tracker": "https://github.com/adromir/ha-virtual-device-entities/issues",
   "codeowners": ["@adromir"],

@@ -12,10 +12,15 @@ from homeassistant.util import dt as dt_util
 
 from .const import (
     DOMAIN,
-    CONF_DEVICE_ID,
+    CONF_ENTITIES,
+    CONF_DEVICE_NAME,
+    CONF_BASE_DEVICE_ID,
+    CONF_ATTACH_TO_BASE,
     CONF_ENTITY_NAME,
+    CONF_PLATFORM,
     CONF_ICON,
-    CONF_LINKED_ENTITY,
+    CONF_SOURCE_ENTITY,
+    PLATFORM_BUTTON,
 )
 from .helpers import get_device_info
 
@@ -27,9 +32,30 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up the Virtual Device Entities button."""
-    entity = VirtualDeviceButton(hass, entry)
-    async_add_entities([entity], True)
+    """Set up the Virtual Device buttons."""
+    entry_data = {**entry.data, **entry.options}
+    entities_map = entry_data.get(CONF_ENTITIES, {})
+    device_name = entry_data.get(CONF_DEVICE_NAME, entry.title)
+    base_device_id = entry_data.get(CONF_BASE_DEVICE_ID)
+    attach_to_base = entry_data.get(CONF_ATTACH_TO_BASE, False)
+
+    buttons = []
+    for ent_id, cfg in entities_map.items():
+        if cfg.get(CONF_PLATFORM) == PLATFORM_BUTTON:
+            buttons.append(
+                VirtualDeviceButton(
+                    hass=hass,
+                    entry=entry,
+                    entity_id_key=ent_id,
+                    config=cfg,
+                    device_name=device_name,
+                    base_device_id=base_device_id,
+                    attach_to_base=attach_to_base,
+                )
+            )
+
+    if buttons:
+        async_add_entities(buttons, True)
 
 
 class VirtualDeviceButton(ButtonEntity):
@@ -37,28 +63,39 @@ class VirtualDeviceButton(ButtonEntity):
 
     _attr_has_entity_name = True
 
-    def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        entry: ConfigEntry,
+        entity_id_key: str,
+        config: dict[str, Any],
+        device_name: str,
+        base_device_id: str | None,
+        attach_to_base: bool,
+    ) -> None:
         """Initialize the virtual button."""
         self.hass = hass
         self._entry = entry
-        self._attr_unique_id = f"{DOMAIN}_{entry.entry_id}_button"
+        self._entity_id_key = entity_id_key
+        self._config = config
+        self._device_name = device_name
+        self._base_device_id = base_device_id
+        self._attach_to_base = attach_to_base
 
-        opts = entry.options
-        data = entry.data
-
-        self._attr_name = opts.get(CONF_ENTITY_NAME, data.get(CONF_ENTITY_NAME, "Virtual Action"))
-        self._base_device_id = opts.get(CONF_DEVICE_ID, data.get(CONF_DEVICE_ID))
-        self._attr_icon = opts.get(CONF_ICON, data.get(CONF_ICON, "mdi:gesture-tap-button"))
-        self._linked_entity = opts.get(CONF_LINKED_ENTITY, data.get(CONF_LINKED_ENTITY))
+        self._attr_unique_id = f"{DOMAIN}_{entry.entry_id}_{entity_id_key}"
+        self._attr_name = config.get(CONF_ENTITY_NAME, "Virtual Action")
+        self._attr_icon = config.get(CONF_ICON, "mdi:gesture-tap-button")
+        self._target_entity = config.get(CONF_SOURCE_ENTITY)
 
     @property
     def device_info(self):
-        """Return device information linking to base device or standalone."""
+        """Return device information."""
         return get_device_info(
             self.hass,
             self._entry.entry_id,
             self._base_device_id,
-            self._attr_name,
+            self._attach_to_base,
+            self._device_name,
         )
 
     @property
@@ -67,7 +104,7 @@ class VirtualDeviceButton(ButtonEntity):
         return {
             "is_virtual": True,
             "base_device_id": self._base_device_id,
-            "linked_entity": self._linked_entity,
+            "target_entity": self._target_entity,
         }
 
     async def async_added_to_hass(self) -> None:
@@ -88,7 +125,6 @@ class VirtualDeviceButton(ButtonEntity):
         now_iso = dt_util.utcnow().isoformat()
         _LOGGER.debug("Virtual button %s pressed at %s", self.entity_id, now_iso)
 
-        # Fire Home Assistant bus event
         self.hass.bus.async_fire(
             "virtual_device_entities_button_pressed",
             {
@@ -98,13 +134,13 @@ class VirtualDeviceButton(ButtonEntity):
             },
         )
 
-        # If a linked entity exists (e.g. maintenance timestamp sensor), update it directly
-        if self._linked_entity:
+        # Update target entity if linked (e.g. timestamp sensor for filter replacement)
+        if self._target_entity:
             for entity in self.hass.data.get(f"{DOMAIN}_entities", []):
-                if getattr(entity, "entity_id", None) == self._linked_entity:
+                if getattr(entity, "entity_id", None) == self._target_entity:
                     if hasattr(entity, "async_set_value"):
                         await entity.async_set_value(now_iso)
 
     async def async_reset(self) -> None:
-        """Reset action alias."""
+        """Reset alias for button."""
         await self.async_press()

@@ -2,17 +2,31 @@
   "config": {
     "step": {
       "user": {
-        "title": "Virtuelle Geräte-Entität erstellen",
-        "description": "Erstelle eine virtuelle Entität, die direkt an ein bestehendes Gerät angehängt wird, oder erstelle ein eigenständiges virtuelles Gerät.",
+        "title": "Virtuelles Gerät erstellen",
+        "description": "Erstelle ein erweitertes virtuelles Gerät in Home Assistant, das benutzerdefinierte Zustände mit eigenen Farben, gespiegelte Sensoren und Formeln bündelt.",
         "data": {
-          "entity_name": "Entitätsname",
-          "platform_type": "Plattform-Typ",
-          "device_id": "Basis-Gerät (optional)",
-          "initial_value": "Startwert / Zustand",
+          "device_name": "Gerätename",
+          "base_device_id": "Basis-Gerät (optional)",
+          "attach_to_base_device": "Direkt an die Seite des Basis-Geräts anhängen",
+          "entity_type": "Erster Entitätstyp"
+        }
+      },
+      "add_entity": {
+        "title": "Entität konfigurieren",
+        "description": "Lege die Eigenschaften für diese Entität auf dem virtuellen Gerät fest.",
+        "data": {
+          "name": "Entitätsname",
+          "source_entity": "Quell-Entität",
+          "state_rules": "Zustandsregeln (Bedingung | Zustand | Icon | Farbe)",
+          "default_state": "Standardzustand",
+          "default_icon": "Standardsymbol",
+          "default_color": "Standardfarbe (HEX oder Farbname)",
+          "template": "Jinja2-Berechnungsformel",
+          "platform": "Plattform",
           "icon": "Symbol (Icon)",
           "unit_of_measurement": "Maßeinheit",
           "device_class": "Geräteklasse (Device Class)",
-          "linked_entity": "Verknüpfte Quell-Entität (optional)"
+          "initial_value": "Startwert"
         }
       }
     }
@@ -20,15 +34,45 @@
   "options": {
     "step": {
       "init": {
-        "title": "Virtuelle Entitäts-Optionen",
-        "description": "Passe Konfiguration und Werte dieser virtuellen Entität an.",
+        "title": "Virtuelles Gerät verwalten",
+        "description": "Wähle eine Aktion für dieses virtuelle Gerät.",
+        "menu_options": {
+          "add_entity_type": "➕ Neue Entität zu diesem Gerät hinzufügen",
+          "edit_device": "🏷️ Gerätename und Basis-Gerät bearbeiten"
+        }
+      },
+      "add_entity_type": {
+        "title": "Entitätstyp wählen",
+        "description": "Wähle die Art der Entität, die hinzugefügt werden soll.",
         "data": {
-          "entity_name": "Entitätsname",
-          "initial_value": "Wert / Zustand",
-          "icon": "Symbol (Icon)",
+          "entity_type": "Entitätstyp"
+        }
+      },
+      "add_entity_details": {
+        "title": "Entität konfigurieren",
+        "description": "Lege die Eigenschaften der neuen Entität fest.",
+        "data": {
+          "name": "Entitätsname",
+          "source_entity": "Quell-Entität",
+          "state_rules": "Zustandsregeln (Bedingung | Zustand | Icon | Farbe)",
+          "default_state": "Standardzustand",
+          "default_icon": "Standardsymbol",
+          "default_color": "Standardfarbe",
+          "template": "Jinja2-Formel",
+          "platform": "Plattform",
+          "icon": "Symbol",
           "unit_of_measurement": "Maßeinheit",
-          "device_class": "Geräteklasse (Device Class)",
-          "linked_entity": "Verknüpfte Quell-Entität"
+          "device_class": "Geräteklasse",
+          "initial_value": "Startwert"
+        }
+      },
+      "edit_device": {
+        "title": "Geräteeinstellungen",
+        "description": "Einstellungen des virtuellen Geräts anpassen.",
+        "data": {
+          "device_name": "Gerätename",
+          "base_device_id": "Basis-Gerät",
+          "attach_to_base_device": "Direkt an die Seite des Basis-Geräts anhängen"
         }
       }
     }
@@ -36,17 +80,17 @@
   "services": {
     "set_value": {
       "name": "Virtuellen Wert setzen",
-      "description": "Aktualisiert den Zustand oder Wert einer virtuellen Geräte-Entität.",
+      "description": "Aktualisiert den Zustand oder Wert einer virtuellen Entität.",
       "fields": {
         "value": {
           "name": "Wert",
-          "description": "Der neue Zustand, die Zahl oder der Textwert."
+          "description": "Der neue Zustand oder Wert."
         }
       }
     },
     "reset": {
       "name": "Virtuelle Entität zurücksetzen",
-      "description": "Setzt die virtuelle Entität auf ihren Standardwert zurück oder setzt den Zeitstempel auf Jetzt."
+      "description": "Setzt die Entität auf ihren Standardwert zurück oder aktualisiert den Zeitstempel."
     }
   }
 }

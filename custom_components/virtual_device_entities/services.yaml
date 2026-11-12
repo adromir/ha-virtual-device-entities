@@ -18,3 +18,4 @@ reset:
   target:
     entity:
       integration: virtual_device_entities
+

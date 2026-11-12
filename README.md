@@ -4,43 +4,61 @@
 [![GitHub Release](https://img.shields.io/github/v/release/adromir/ha-virtual-device-entities)](https://github.com/adromir/ha-virtual-device-entities/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-A universal Home Assistant custom integration and helper (`integration_type: helper`) that allows you to attach arbitrary readable and writable virtual entities directly to existing physical devices, or create standalone virtual devices.
+A universal Home Assistant custom integration and helper (`integration_type: helper`) that turns any device into an **Enhanced Virtual Device**. Create custom states with dynamic icons and custom colors, map proxy entities from external smart plugs or sensors, and calculate live metrics (e.g. battery lifetime estimation) using reactive Jinja2 templates!
 
 [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=adromir&repository=ha-virtual-device-entities&category=integration)
 
 ---
 
-## 💡 Why Virtual Device Entities?
+## 💡 The Problem & The Solution
 
 In standard Home Assistant:
 - Physical devices are locked to the entities their native integration creates.
-- Adding custom metadata, maintenance timestamps (e.g. filter changes, battery replacement dates), manual operating hours, or custom virtual switches required cumbersome template sensors or disparate helpers scattered across the dashboard.
-- **Virtual Device Entities** solves this by binding custom virtual entities **directly into the Home Assistant Device Registry** of the chosen hardware!
-- When you open the device page under **Settings -> Devices & Services -> Devices -> [Your Device]**, your new virtual entities appear directly on the device card alongside its native sensors!
+- Standard entities **cannot** have different icons and colors per state.
+- Smart appliances often lack built-in power or energy metering, requiring separate smart plugs whose entities are detached from the appliance.
+- Calculating metrics (such as battery discharge estimation from a replacement date) usually required scattered Jinja2 YAML template sensors.
+
+**Virtual Device Entities** solves this by creating an **Enhanced Virtual Device** in Home Assistant that groups all custom entities, external mapped sensors, custom state machines, and calculations together on one unified device page!
 
 ---
 
-## ✨ Features
+## ✨ 4 Powerful Entity Modes
 
-- **Direct Device Registry Binding**:
-  - Attach entities directly to any existing hardware device (smart locks, vacuum robots, washing machines, thermostats, etc.).
-  - Or create standalone virtual devices if no physical device is selected.
-- **6 Supported Platform Types**:
-  - `sensor`: Text values, custom state status, numeric measurements, or timestamps.
-  - `binary_sensor`: Custom conditions, maintenance warning flags, or boolean states.
-  - `switch`: Virtual on/off toggles attached to your device.
-  - `number`: Configurable sliders, limits, or setpoints.
-  - `button`: Action triggers and instant reset buttons (e.g., "Reset Filter").
-  - `text`: Freeform notes, serial numbers, manuals, or instructions.
-- **Persistent State Across Restarts**:
-  - All entities implement Home Assistant's `RestoreEntity` architecture so values survive reboots.
-- **Dedicated Automation Services**:
-  - `virtual_device_entities.set_value`: Easily update the value of any virtual entity via automations or dashboard scripts.
-  - `virtual_device_entities.reset`: Reset entities to their initial state or set timestamp sensors to current time.
-- **100% UI Config Flow & Options Flow**:
-  - Set up and adjust entities directly in the Home Assistant UI under Helpers.
-- **Bilingual Support**:
-  - English and German translations included out of the box.
+### 1. 🎨 State & Color Machine
+Define custom states with **individual icons and colors per state** that change dynamically at runtime:
+- **Dynamic `@property def icon`**: The icon updates in real time based on the active state.
+- **State Colors**: Exposes `icon_color`, `state_color`, `rgb_color`, and `color` in entity attributes for Lovelace Tile Cards, Vision Glass, Mushroom, and custom cards.
+- **Rule Engine**: Evaluates numeric thresholds (`< 3.5`, `3.5 - 200`, `> 200`) or string matches (`cleaning`, `docked`, `error`, `contains fehler`).
+
+**Example: Washing Machine Status from Smart Plug Power**
+```text
+< 3.5 | Standby | mdi:washing-machine-off | #9e9e9e
+3.5 - 200 | Spülen | mdi:washing-machine | #2196f3
+> 200 | Schleudern | mdi:washing-machine-alert | #ff9800
+```
+
+### 2. 🔌 Mirror / Proxy Entities (External Devices)
+Map any entity from any other device directly onto your virtual device!
+- **Example**: If your washing machine has no power sensor, select `sensor.smartplug_waschmaschine_power`. The helper creates `sensor.waschmaschine_leistung` directly on the washer's device page!
+
+### 3. 🧮 Reactive Template Calculations
+Calculate states and metrics on the fly using Jinja2 expressions:
+- Automatically recalculates whenever any referenced entity updates.
+- **Example: Estimated Battery Level from Replacement Date & Spec Consumption**:
+```jinja2
+{{ 100 - ((as_timestamp(now()) - as_timestamp(states('sensor.waschmaschine_akku_gewechselt_am'))) / 86400 * 1.5) | round(0) }}
+```
+- **Example: Remaining Battery Runtime in Days**:
+```jinja2
+{{ ((states('sensor.waschmaschine_batterie') | float(0)) / 1.5) | round(1) }}
+```
+
+### 4. ✍️ Manual Writable Helpers
+Attach input helpers directly to the device:
+- Maintenance timestamps (e.g. `Akku gewechselt am`, `Letzter Filterwechsel`).
+- Action triggers & Reset buttons (e.g. "Filter zurücksetzen").
+- Freeform text notes, serial numbers, or threshold numbers.
+- State persistence across reboots via `RestoreEntity`.
 
 ---
 
@@ -61,31 +79,31 @@ In standard Home Assistant:
 ### Option 2: Manual Installation
 
 1. Download the latest release from the [Releases page](https://github.com/adromir/ha-virtual-device-entities/releases).
-2. Copy the `custom_components/virtual_device_entities` folder into your Home Assistant `<config>/custom_components/` directory.
+2. Copy `custom_components/virtual_device_entities` into `<config>/custom_components/`.
 3. Restart Home Assistant.
 
 ---
 
-## ⚙️ How to Use
+## ⚙️ How to Create & Configure
 
-1. In Home Assistant, go to **Settings** > **Devices & Services** > **Helpers**.
+1. Go to **Settings** > **Devices & Services** > **Helpers**.
 2. Click **Create Helper** (+ button).
 3. Select **Virtual Device Entities**.
-4. Configure your entity:
-   - **Entity Name**: Name of the entity (e.g. *Letzter Filterwechsel*).
-   - **Platform Type**: Choose `Sensor`, `Binary Sensor`, `Switch`, `Number`, `Button`, or `Text`.
-   - **Base Device (optional)**: Pick the physical device you want this entity to be attached to!
-   - **Initial Value**: Default value or state.
-   - **Icon**: Any Material Design Icon (e.g. `mdi:air-filter`).
-   - **Unit of Measurement**: (Optional, e.g. `days`, `°C`, `kWh`).
-   - **Device Class**: (Optional, e.g. `timestamp`, `battery`, `duration`).
-5. Click **Submit**. Your new virtual entity is immediately created and visible on your device page!
+4. **Step 1: Device Setup**:
+   - **Device Name**: e.g. *Virtuelle Waschmaschine*.
+   - **Base Device (optional)**: Pick an existing physical device, or leave blank for a standalone device.
+   - **Initial Entity Type**: Select State Machine, Mirror, Template, or Manual Helper.
+5. **Step 2: Configure Entity**:
+   - Set up your state rules, source entity, or template.
+   - Click **Submit**.
+6. **Add More Entities Anytime**:
+   - In **Settings** > **Devices & Services** > **Helpers**, click on your Virtual Device and choose **Configure** (⚙️) to add more entities (e.g. power mirrors, battery calculations, maintenance buttons)!
 
 ---
 
-## 🛠️ Service Examples
+## 🛠️ Automation Services
 
-### Update a Virtual Entity via Automation
+### Set Value
 
 ```yaml
 action: virtual_device_entities.set_value
@@ -95,12 +113,12 @@ data:
   value: "Reinigung erforderlich"
 ```
 
-### Reset a Timestamp / Counter
+### Reset Entity / Update Timestamp
 
 ```yaml
 action: virtual_device_entities.reset
 target:
-  entity_id: sensor.waschmaschine_letzter_filterwechsel
+  entity_id: sensor.waschmaschine_akku_gewechselt_am
 ```
 
 ---

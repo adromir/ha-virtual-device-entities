@@ -12,10 +12,15 @@ from homeassistant.helpers.restore_state import RestoreEntity
 
 from .const import (
     DOMAIN,
-    CONF_DEVICE_ID,
+    CONF_ENTITIES,
+    CONF_DEVICE_NAME,
+    CONF_BASE_DEVICE_ID,
+    CONF_ATTACH_TO_BASE,
     CONF_ENTITY_NAME,
-    CONF_INITIAL_VALUE,
+    CONF_PLATFORM,
     CONF_ICON,
+    CONF_INITIAL_VALUE,
+    PLATFORM_TEXT,
 )
 from .helpers import get_device_info
 
@@ -27,9 +32,30 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up the Virtual Device Entities text entity."""
-    entity = VirtualDeviceText(hass, entry)
-    async_add_entities([entity], True)
+    """Set up the Virtual Device text entities."""
+    entry_data = {**entry.data, **entry.options}
+    entities_map = entry_data.get(CONF_ENTITIES, {})
+    device_name = entry_data.get(CONF_DEVICE_NAME, entry.title)
+    base_device_id = entry_data.get(CONF_BASE_DEVICE_ID)
+    attach_to_base = entry_data.get(CONF_ATTACH_TO_BASE, False)
+
+    texts = []
+    for ent_id, cfg in entities_map.items():
+        if cfg.get(CONF_PLATFORM) == PLATFORM_TEXT:
+            texts.append(
+                VirtualDeviceText(
+                    hass=hass,
+                    entry=entry,
+                    entity_id_key=ent_id,
+                    config=cfg,
+                    device_name=device_name,
+                    base_device_id=base_device_id,
+                    attach_to_base=attach_to_base,
+                )
+            )
+
+    if texts:
+        async_add_entities(texts, True)
 
 
 class VirtualDeviceText(RestoreEntity, TextEntity):
@@ -37,29 +63,40 @@ class VirtualDeviceText(RestoreEntity, TextEntity):
 
     _attr_has_entity_name = True
 
-    def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        entry: ConfigEntry,
+        entity_id_key: str,
+        config: dict[str, Any],
+        device_name: str,
+        base_device_id: str | None,
+        attach_to_base: bool,
+    ) -> None:
         """Initialize the virtual text entity."""
         self.hass = hass
         self._entry = entry
-        self._attr_unique_id = f"{DOMAIN}_{entry.entry_id}_text"
+        self._entity_id_key = entity_id_key
+        self._config = config
+        self._device_name = device_name
+        self._base_device_id = base_device_id
+        self._attach_to_base = attach_to_base
 
-        opts = entry.options
-        data = entry.data
+        self._attr_unique_id = f"{DOMAIN}_{entry.entry_id}_{entity_id_key}"
+        self._attr_name = config.get(CONF_ENTITY_NAME, "Virtual Text")
+        self._attr_icon = config.get(CONF_ICON, "mdi:text-box-outline")
 
-        self._attr_name = opts.get(CONF_ENTITY_NAME, data.get(CONF_ENTITY_NAME, "Virtual Text"))
-        self._base_device_id = opts.get(CONF_DEVICE_ID, data.get(CONF_DEVICE_ID))
-        self._attr_icon = opts.get(CONF_ICON, data.get(CONF_ICON, "mdi:text-box-outline"))
-
-        self._attr_native_value = str(opts.get(CONF_INITIAL_VALUE, data.get(CONF_INITIAL_VALUE, "")))
+        self._attr_native_value = str(config.get(CONF_INITIAL_VALUE, ""))
 
     @property
     def device_info(self):
-        """Return device information linking to base device or standalone."""
+        """Return device information."""
         return get_device_info(
             self.hass,
             self._entry.entry_id,
             self._base_device_id,
-            self._attr_name,
+            self._attach_to_base,
+            self._device_name,
         )
 
     @property
@@ -73,7 +110,6 @@ class VirtualDeviceText(RestoreEntity, TextEntity):
     async def async_added_to_hass(self) -> None:
         """Handle entity added to Home Assistant."""
         await super().async_added_to_hass()
-
         entities_list = self.hass.data.setdefault(f"{DOMAIN}_entities", [])
         entities_list.append(self)
 
@@ -96,8 +132,5 @@ class VirtualDeviceText(RestoreEntity, TextEntity):
 
     async def async_reset(self) -> None:
         """Reset text to initial value."""
-        init_val = self._entry.options.get(
-            CONF_INITIAL_VALUE, self._entry.data.get(CONF_INITIAL_VALUE, "")
-        )
-        self._attr_native_value = str(init_val)
+        self._attr_native_value = str(self._config.get(CONF_INITIAL_VALUE, ""))
         self.async_write_ha_state()

@@ -39,7 +39,13 @@ from .const import (
     TYPE_MANUAL,
     PLATFORM_SENSOR,
 )
-from .helpers import get_device_info, parse_state_rules, evaluate_condition, color_to_rgb
+from .helpers import (
+    get_device_info,
+    parse_state_rules,
+    evaluate_condition,
+    color_to_rgb,
+    resolve_inherited_device_class,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -137,7 +143,38 @@ class VirtualDeviceSensor(RestoreEntity, SensorEntity):
     @property
     def icon(self) -> str | None:
         """Dynamically return the icon of the active state."""
-        return self._current_icon or self._default_icon
+        if self._current_icon:
+            return self._current_icon
+        if self._default_icon:
+            return self._default_icon
+        if self._source_entity:
+            st = self.hass.states.get(self._source_entity)
+            if st and st.attributes.get("icon"):
+                return st.attributes.get("icon")
+        return "mdi:chip"
+
+    @property
+    def device_class(self) -> str | None:
+        """Return device class, inheriting from source entity or base device if not set."""
+        if self._attr_device_class:
+            return self._attr_device_class
+        return resolve_inherited_device_class(
+            self.hass,
+            source_entity_id=self._source_entity,
+            base_device_id=self._base_device_id,
+            platform=PLATFORM_SENSOR,
+        )
+
+    @property
+    def native_unit_of_measurement(self) -> str | None:
+        """Return the unit of measurement, inheriting from source entity if not set."""
+        if self._attr_native_unit_of_measurement:
+            return self._attr_native_unit_of_measurement
+        if self._source_entity:
+            st = self.hass.states.get(self._source_entity)
+            if st and st.attributes.get("unit_of_measurement"):
+                return st.attributes.get("unit_of_measurement")
+        return None
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:

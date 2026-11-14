@@ -1,0 +1,96 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Buat Perangkat Virtual",
+        "description": "Buat perangkat virtual canggih di Home Assistant yang menggabungkan status kustom dengan warna sendiri, sensor cermin, dan perhitungan templat.",
+        "data": {
+          "device_name": "Nama Perangkat",
+          "base_device_id": "Perangkat Dasar (opsional)",
+          "attach_to_base_device": "Lampirkan langsung ke halaman perangkat dasar",
+          "entity_type": "Tipe Entitas Awal"
+        }
+      },
+      "add_entity": {
+        "title": "Konfigurasi Entitas",
+        "description": "Tentukan properti untuk entitas ini pada perangkat virtual.",
+        "data": {
+          "name": "Nama Entitas",
+          "source_entity": "Entitas Sumber",
+          "state_rules": "Aturan Status (Kondisi | Status | Ikon | Warna)",
+          "default_state": "Status Default",
+          "default_icon": "Ikon Default",
+          "default_color": "Warna Default (HEX atau nama CSS)",
+          "template": "Templat Perhitungan Jinja2",
+          "platform": "Platform",
+          "icon": "Ikon",
+          "unit_of_measurement": "Satuan Pengukuran",
+          "device_class": "Kelas Perangkat (Device Class)",
+          "initial_value": "Nilai Awal"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Kelola Perangkat Virtual",
+        "description": "Pilih tindakan untuk perangkat virtual ini.",
+        "menu_options": {
+          "add_entity_type": "➕ Tambah entitas baru ke perangkat ini",
+          "edit_device": "🏷️ Edit nama perangkat dan perangkat dasar"
+        }
+      },
+      "add_entity_type": {
+        "title": "Pilih Tipe Entitas",
+        "description": "Pilih tipe entitas yang akan ditambahkan ke perangkat virtual ini.",
+        "data": {
+          "entity_type": "Tipe Entitas"
+        }
+      },
+      "add_entity_details": {
+        "title": "Konfigurasi Entitas",
+        "description": "Konfigurasikan properti entitas baru.",
+        "data": {
+          "name": "Nama Entitas",
+          "source_entity": "Entitas Sumber",
+          "state_rules": "Aturan Status (Kondisi | Status | Ikon | Warna)",
+          "default_state": "Status Default",
+          "default_icon": "Ikon Default",
+          "default_color": "Warna Default",
+          "template": "Templat Jinja2",
+          "platform": "Platform",
+          "icon": "Ikon",
+          "unit_of_measurement": "Satuan",
+          "device_class": "Kelas Perangkat",
+          "initial_value": "Nilai Awal"
+        }
+      },
+      "edit_device": {
+        "title": "Pengaturan Perangkat",
+        "description": "Perbarui pengaturan perangkat virtual.",
+        "data": {
+          "device_name": "Nama Perangkat",
+          "base_device_id": "Perangkat Dasar",
+          "attach_to_base_device": "Lampirkan langsung ke halaman perangkat dasar"
+        }
+      }
+    }
+  },
+  "services": {
+    "set_value": {
+      "name": "Atur Nilai Virtual",
+      "description": "Memperbarui status atau nilai entitas virtual.",
+      "fields": {
+        "value": {
+          "name": "Nilai",
+          "description": "Status atau nilai baru yang akan diatur."
+        }
+      }
+    },
+    "reset": {
+      "name": "Reset Entitas Virtual",
+      "description": "Mereset entitas virtual ke status awal default atau memperbarui stempel waktu ke sekarang."
+    }
+  }
+}

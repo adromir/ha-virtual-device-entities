@@ -30,7 +30,7 @@ from .const import (
     TYPE_MANUAL,
     PLATFORM_BINARY_SENSOR,
 )
-from .helpers import get_device_info
+from .helpers import get_device_info, resolve_inherited_device_class
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -112,6 +112,29 @@ class VirtualDeviceBinarySensor(RestoreEntity, BinarySensorEntity):
             self._base_device_id,
             self._attach_to_base,
             self._device_name,
+        )
+
+    @property
+    def icon(self) -> str | None:
+        """Dynamically return the icon, inheriting from source entity if not set."""
+        if self._attr_icon:
+            return self._attr_icon
+        if self._source_entity:
+            st = self.hass.states.get(self._source_entity)
+            if st and st.attributes.get("icon"):
+                return st.attributes.get("icon")
+        return "mdi:checkbox-marked-circle-outline"
+
+    @property
+    def device_class(self) -> str | None:
+        """Return device class, inheriting from source entity or base device if not set."""
+        if self._attr_device_class:
+            return self._attr_device_class
+        return resolve_inherited_device_class(
+            self.hass,
+            source_entity_id=self._source_entity,
+            base_device_id=self._base_device_id,
+            platform=PLATFORM_BINARY_SENSOR,
         )
 
     @property

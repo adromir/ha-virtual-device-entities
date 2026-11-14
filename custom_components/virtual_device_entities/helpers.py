@@ -5,7 +5,7 @@ import logging
 from typing import Any
 
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import device_registry as dr, entity_registry as er
 from homeassistant.helpers.entity import DeviceInfo
 
 from .const import DOMAIN
@@ -137,3 +137,46 @@ def evaluate_condition(cond: str, raw_state: Any) -> bool:
         return sub in raw_str.lower()
 
     return False
+
+
+def resolve_inherited_device_class(
+    hass: HomeAssistant,
+    source_entity_id: str | None = None,
+    base_device_id: str | None = None,
+    platform: str | None = None,
+) -> str | None:
+    """Resolve inherited device_class from source entity or base device."""
+    ent_reg = er.async_get(hass)
+
+    # 1. Direct inheritance from source entity
+    if source_entity_id:
+        entry = ent_reg.async_get(source_entity_id)
+        if entry:
+            if entry.device_class:
+                return str(entry.device_class)
+            if entry.original_device_class:
+                return str(entry.original_device_class)
+        state = hass.states.get(source_entity_id)
+        if state and state.attributes.get("device_class"):
+            return str(state.attributes.get("device_class"))
+
+    # 2. Inheritance from base device entities (if no source entity or source entity has none)
+    if base_device_id:
+        device_entries = er.async_entries_for_device(ent_reg, base_device_id)
+        for entry in device_entries:
+            if platform and entry.domain != platform:
+                continue
+            if entry.device_class:
+                return str(entry.device_class)
+            if entry.original_device_class:
+                return str(entry.original_device_class)
+        # Fallback without platform filter if matching platform wasn't found
+        if platform:
+            for entry in device_entries:
+                if entry.device_class:
+                    return str(entry.device_class)
+                if entry.original_device_class:
+                    return str(entry.original_device_class)
+
+    return None
+

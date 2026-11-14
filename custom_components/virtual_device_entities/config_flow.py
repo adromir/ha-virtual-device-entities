@@ -159,11 +159,11 @@ class VirtualDeviceEntitiesConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         elif self._selected_entity_type == TYPE_MIRROR:
             schema_dict = {
-                vol.Required(CONF_ENTITY_NAME, default="Leistung"): selector.TextSelector(),
+                vol.Required(CONF_ENTITY_NAME, default="Sensor"): selector.TextSelector(),
                 vol.Required(CONF_SOURCE_ENTITY): selector.EntitySelector(),
-                vol.Optional(CONF_ICON, default="mdi:flash"): selector.IconSelector(),
-                vol.Optional(CONF_UNIT, default="W"): selector.TextSelector(),
-                vol.Optional(CONF_DEVICE_CLASS, default="power"): selector.TextSelector(),
+                vol.Optional(CONF_ICON): selector.IconSelector(),
+                vol.Optional(CONF_UNIT): selector.TextSelector(),
+                vol.Optional(CONF_DEVICE_CLASS): selector.TextSelector(),
                 vol.Optional(CONF_PLATFORM, default=PLATFORM_SENSOR): selector.SelectSelector(
                     selector.SelectSelectorConfig(
                         options=[PLATFORM_SENSOR, PLATFORM_BINARY_SENSOR],
@@ -232,8 +232,13 @@ class VirtualDeviceEntitiesOptionsFlow(config_entries.OptionsFlow):
 
     def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
         """Initialize options flow."""
-        self.config_entry = config_entry
+        self._config_entry = config_entry
         self._new_entity_type: str = TYPE_STATE_MACHINE
+
+    @property
+    def config_entry(self) -> config_entries.ConfigEntry:
+        """Return the config entry."""
+        return getattr(self, "_config_entry", None) or super().config_entry
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None

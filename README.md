@@ -1,12 +1,13 @@
-# Universal Virtual Device Entities Helper for Home Assistant
-
-[![HACS Custom Repository](https://img.shields.io/badge/HACS-Custom%20Repo-orange.svg)](https://github.com/hacs/default)
-[![GitHub Release](https://img.shields.io/github/v/release/adromir/ha-virtual-device-entities)](https://github.com/adromir/ha-virtual-device-entities/releases)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-
-A universal Home Assistant custom integration and helper (`integration_type: helper`) that turns any device into an **Enhanced Virtual Device**. Create custom states with dynamic icons and custom colors, map proxy entities from external smart plugs or sensors, and calculate live metrics (e.g. battery lifetime estimation) using reactive Jinja2 templates!
+# 📱 Universal Virtual Device Entities Helper for Home Assistant
 
 [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=adromir&repository=ha-virtual-device-entities&category=integration)
+[![Ko-Fi](https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/adromir)
+[![HACS Custom Repository](https://img.shields.io/badge/HACS-Custom%20Repo-orange.svg?style=for-the-badge)](https://github.com/hacs/default)
+[![GitHub Release](https://img.shields.io/github/v/release/adromir/ha-virtual-device-entities?style=for-the-badge&color=blue)](https://github.com/adromir/ha-virtual-device-entities/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
+[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg?style=for-the-badge)](https://github.com/adromir/ha-virtual-device-entities)
+
+A universal Home Assistant custom integration and helper (`integration_type: helper`) that turns any device into an **Enhanced Virtual Device**. Create custom states with dynamic icons and custom colors, map proxy entities from external smart plugs or sensors with automatic `device_class` inheritance, and calculate live metrics (e.g. battery lifetime estimation) using reactive Jinja2 templates! Fully localized in English, German (`de`), and Indonesian (`id`).
 
 ---
 
@@ -39,7 +40,8 @@ Define custom states with **individual icons and colors per state** that change 
 
 ### 2. 🔌 Mirror / Proxy Entities (External Devices)
 Map any entity from any other device directly onto your virtual device!
-- **Example**: If your washing machine has no power sensor, select `sensor.smartplug_waschmaschine_power`. The helper creates `sensor.waschmaschine_leistung` directly on the washer's device page!
+- **Automatic Metadata Inheritance**: Dynamically inherits `device_class`, `unit_of_measurement`, and `icon` from the source entity or base device—no manual overrides needed unless desired.
+- **Example**: If your washing machine has no power sensor, select `sensor.smartplug_waschmaschine_power`. The helper creates `sensor.waschmaschine_leistung` directly on the washer's device page with device class `power` and unit `W` inherited automatically!
 
 ### 3. 🧮 Reactive Template Calculations
 Calculate states and metrics on the fly using Jinja2 expressions:

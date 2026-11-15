@@ -11,6 +11,17 @@ A universal Home Assistant custom integration and helper (`integration_type: hel
 
 ---
 
+## 📸 Screenshots
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/adromir/ha-virtual-device-entities/main/Screenshots/virtual-device-entities-config.png" alt="Virtual Device Entities Configuration Flow" width="800">
+</p>
+<p align="center">
+  <em>Configuration flow: create enhanced virtual devices, attach them directly to existing physical devices, configure state & color machines, and map proxy entities.</em>
+</p>
+
+---
+
 ## 💡 The Problem & The Solution
 
 In standard Home Assistant:
